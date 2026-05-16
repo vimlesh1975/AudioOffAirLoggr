@@ -87,6 +87,8 @@ internal sealed class MainForm : Form
     private bool _playlistPlaybackActive;
     private bool _settingsReady;
     private int _currentPlaylistIndex = -1;
+    private int? _clipDragRowIndex;
+    private Point _clipDragStartPoint;
     private int? _playlistDragRowIndex;
     private Point _playlistDragStartPoint;
 
@@ -499,6 +501,8 @@ internal sealed class MainForm : Form
         };
         _clipGrid.SelectionChanged += (_, _) => UpdateTransportState();
         _clipGrid.CellMouseDown += ClipGridCellMouseDown;
+        _clipGrid.MouseDown += ClipGridMouseDown;
+        _clipGrid.MouseMove += ClipGridMouseMove;
         _clipGrid.CellDoubleClick += ClipGridCellDoubleClick;
         _addToPlaylistButton.Click += (_, _) => AddSelectedClipToPlaylist();
         _cueClipButton.Click += (_, _) => CueSelectedClip();
@@ -767,6 +771,59 @@ internal sealed class MainForm : Form
         }
     }
 
+    private void ClipGridMouseDown(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left)
+        {
+            _clipDragRowIndex = null;
+            return;
+        }
+
+        var hit = _clipGrid.HitTest(e.X, e.Y);
+        if (hit.RowIndex >= 0)
+        {
+            _clipDragRowIndex = hit.RowIndex;
+            _clipDragStartPoint = e.Location;
+            SelectGridRow(_clipGrid, hit.RowIndex);
+        }
+        else
+        {
+            _clipDragRowIndex = null;
+        }
+    }
+
+    private void ClipGridMouseMove(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left || !_clipDragRowIndex.HasValue)
+        {
+            return;
+        }
+
+        if (_clipDragRowIndex.Value < 0 || _clipDragRowIndex.Value >= _clipGrid.Rows.Count)
+        {
+            _clipDragRowIndex = null;
+            return;
+        }
+
+        if (Math.Abs(e.X - _clipDragStartPoint.X) < SystemInformation.DragSize.Width / 2 &&
+            Math.Abs(e.Y - _clipDragStartPoint.Y) < SystemInformation.DragSize.Height / 2)
+        {
+            return;
+        }
+
+        if (_clipGrid.Rows[_clipDragRowIndex.Value].Tag is not string path || !File.Exists(path))
+        {
+            _clipDragRowIndex = null;
+            return;
+        }
+
+        var data = new DataObject();
+        data.SetData(DataFormats.FileDrop, new[] { path });
+        data.SetData(typeof(string), path);
+        _clipGrid.DoDragDrop(data, DragDropEffects.Copy);
+        _clipDragRowIndex = null;
+    }
+
     private void ClipGridCellDoubleClick(object? sender, DataGridViewCellEventArgs e)
     {
         if (e.RowIndex < 0)
@@ -869,26 +926,65 @@ internal sealed class MainForm : Form
 
     private void PlaylistGridDragEnter(object? sender, DragEventArgs e)
     {
-        e.Effect = e.Data?.GetDataPresent(typeof(int)) == true ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effect = GetPlaylistDropEffect(e);
     }
 
     private void PlaylistGridDragOver(object? sender, DragEventArgs e)
     {
-        e.Effect = e.Data?.GetDataPresent(typeof(int)) == true ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effect = GetPlaylistDropEffect(e);
     }
 
     private void PlaylistGridDragDrop(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetData(typeof(int)) is not int sourceIndex)
+        var clientPoint = _playlistGrid.PointToClient(new Point(e.X, e.Y));
+        var hit = _playlistGrid.HitTest(clientPoint.X, clientPoint.Y);
+
+        if (e.Data?.GetData(typeof(int)) is int sourceIndex)
         {
+            var targetIndex = hit.RowIndex >= 0 ? hit.RowIndex : _playlist.Count - 1;
+            MovePlaylistItem(sourceIndex, targetIndex);
+            _playlistDragRowIndex = null;
             return;
         }
 
-        var clientPoint = _playlistGrid.PointToClient(new Point(e.X, e.Y));
-        var hit = _playlistGrid.HitTest(clientPoint.X, clientPoint.Y);
-        var targetIndex = hit.RowIndex >= 0 ? hit.RowIndex : _playlist.Count - 1;
-        MovePlaylistItem(sourceIndex, targetIndex);
+        var paths = GetDroppedAudioPaths(e.Data);
+        if (paths.Length > 0)
+        {
+            var insertIndex = hit.RowIndex >= 0 ? hit.RowIndex : _playlist.Count;
+            AddToPlaylist(paths, insertIndex);
+        }
+
         _playlistDragRowIndex = null;
+    }
+
+    private static DragDropEffects GetPlaylistDropEffect(DragEventArgs e)
+    {
+        if (e.Data?.GetDataPresent(typeof(int)) == true)
+        {
+            return DragDropEffects.Move;
+        }
+
+        return GetDroppedAudioPaths(e.Data).Length > 0 ? DragDropEffects.Copy : DragDropEffects.None;
+    }
+
+    private static string[] GetDroppedAudioPaths(IDataObject? data)
+    {
+        if (data is null)
+        {
+            return [];
+        }
+
+        if (data.GetData(DataFormats.FileDrop) is string[] files)
+        {
+            return files.Where(path => File.Exists(path) && IsAudioFile(path)).ToArray();
+        }
+
+        if (data.GetData(typeof(string)) is string path && File.Exists(path) && IsAudioFile(path))
+        {
+            return [path];
+        }
+
+        return [];
     }
 
     private static void SelectGridRow(DataGridView grid, int rowIndex)
@@ -1139,6 +1235,20 @@ internal sealed class MainForm : Form
         _playlist.Add(new PlaylistItem(path));
         RefreshPlaylistGrid(_playlist.Count - 1);
         SetStatus("Added to playlist");
+    }
+
+    private void AddToPlaylist(IEnumerable<string> paths, int insertIndex)
+    {
+        var audioPaths = paths.Where(path => File.Exists(path) && IsAudioFile(path)).ToArray();
+        if (audioPaths.Length == 0)
+        {
+            return;
+        }
+
+        insertIndex = Math.Clamp(insertIndex, 0, _playlist.Count);
+        _playlist.InsertRange(insertIndex, audioPaths.Select(path => new PlaylistItem(path)));
+        RefreshPlaylistGrid(insertIndex);
+        SetStatus(audioPaths.Length == 1 ? "Added to playlist" : $"{audioPaths.Length} clips added to playlist");
     }
 
     private void SeedStartupPlaylist()
