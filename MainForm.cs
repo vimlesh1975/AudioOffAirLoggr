@@ -362,9 +362,9 @@ internal sealed class MainForm : Form
             Margin = new Padding(0),
         };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
 
         var previewHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, BackColor = Color.FromArgb(34, 40, 46) };
@@ -387,9 +387,9 @@ internal sealed class MainForm : Form
         _fileLabel.Text = "No file loaded";
         previewHeader.Controls.Add(_fileLabel, 1, 0);
 
-        var previewStack = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Color.Black };
+        var previewStack = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Color.Black, Margin = new Padding(0, 0, 0, 8) };
         previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
-        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         root.Controls.Add(previewStack, 0, 1);
 
         var previewFrame = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, BackColor = Color.Black };
@@ -418,11 +418,12 @@ internal sealed class MainForm : Form
         _largeTimeLabel.TextAlign = ContentAlignment.MiddleCenter;
         _largeTimeLabel.Font = new Font(Font.FontFamily, 14f, FontStyle.Bold);
         _largeTimeLabel.Text = "00:00.000";
+        _largeTimeLabel.Margin = new Padding(0, 4, 0, 4);
         root.Controls.Add(_largeTimeLabel, 0, 2);
 
-        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(0, 2, 0, 0) };
-        transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(0, 6, 0, 0), Margin = new Padding(0, 2, 0, 8) };
         transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         root.Controls.Add(transport, 0, 3);
 
         var scrubRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3 };
@@ -432,7 +433,7 @@ internal sealed class MainForm : Form
         ConfigureTinyTimeLabel(_scrubStartLabel, "00:00:00.00", ContentAlignment.MiddleCenter);
         ConfigureTinyTimeLabel(_scrubDurationLabel, "00:00:00.00", ContentAlignment.MiddleCenter);
         scrubRow.Controls.Add(_scrubStartLabel, 0, 0);
-        var progressPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(83, 97, 108), Margin = new Padding(6, 13, 6, 13) };
+        var progressPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(83, 97, 108), Margin = new Padding(6, 14, 6, 10) };
         scrubRow.Controls.Add(progressPanel, 1, 0);
         scrubRow.Controls.Add(_scrubDurationLabel, 2, 0);
         transport.Controls.Add(scrubRow, 0, 0);
