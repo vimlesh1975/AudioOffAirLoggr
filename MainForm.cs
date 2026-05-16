@@ -170,12 +170,14 @@ internal sealed class MainForm : Form
         var header = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
+            ColumnCount = 6,
             BackColor = BackColor,
         };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 290));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
 
         _appTitleLabel.Text = "AudioPlayer";
@@ -202,10 +204,17 @@ internal sealed class MainForm : Form
         _darkModeSwitch.TextAlign = ContentAlignment.MiddleLeft;
         _darkModeSwitch.ForeColor = Color.FromArgb(235, 241, 244);
 
+        ConfigureComboBox(_audioDeviceBox);
+        _audioDeviceBox.Dock = DockStyle.Fill;
+        _audioDeviceBox.Margin = new Padding(0, 14, 12, 12);
+        _audioDeviceBox.Width = 280;
+
         header.Controls.Add(_appTitleLabel, 0, 0);
         header.Controls.Add(_headerStatusLabel, 1, 0);
         header.Controls.Add(_systemLabel, 2, 0);
-        header.Controls.Add(_darkModeSwitch, 3, 0);
+        header.Controls.Add(MakeFieldLabel("Audio Device"), 3, 0);
+        header.Controls.Add(_audioDeviceBox, 4, 0);
+        header.Controls.Add(_darkModeSwitch, 5, 0);
         return header;
     }
 
@@ -467,15 +476,7 @@ internal sealed class MainForm : Form
         ]);
         transport.Controls.Add(controls, 0, 1);
 
-        var bottom = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
-        ConfigureComboBox(_audioDeviceBox);
-        _audioDeviceBox.Width = 280;
-        bottom.Controls.AddRange(
-        [
-            MakeFieldLabel("Audio Device"),
-            _audioDeviceBox,
-        ]);
-        root.Controls.Add(bottom, 0, 4);
+        root.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(30, 35, 40) }, 0, 4);
 
         _statusLabel.ForeColor = Color.FromArgb(172, 183, 190);
         _statusLabel.Text = "Ready";
