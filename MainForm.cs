@@ -1889,7 +1889,13 @@ internal sealed class MainForm : Form
 
         var duration = _reader.TotalTime;
         var position = _reader.CurrentTime;
-        _timeLabel.Text = FormatTime(duration);
+        var remaining = duration - position;
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        _timeLabel.Text = FormatTime(remaining);
         _largeTimeLabel.Text = FormatTime(position);
         _scrubStartLabel.Text = "00:00:00.00";
         _scrubDurationLabel.Text = FormatPlaylistTime(duration);
