@@ -37,6 +37,10 @@ internal sealed class MainForm : Form
     private readonly Button _playPreviousPlaylistButton = new();
     private readonly Button _playNextPlaylistButton = new();
     private readonly Button _cueNextPlaylistButton = new();
+    private readonly Button _seekBackFiveButton = new();
+    private readonly Button _seekBackOneButton = new();
+    private readonly Button _seekForwardOneButton = new();
+    private readonly Button _seekForwardFiveButton = new();
     private readonly Button _startPlaylistButton = new();
     private readonly Button _removePlaylistButton = new();
     private readonly Button _moveUpButton = new();
@@ -421,21 +425,25 @@ internal sealed class MainForm : Form
         var controls = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureButton(_cuePreviousPlaylistButton, "Prev Cue", 84);
         ConfigureButton(_playPreviousPlaylistButton, "Prev Play", 88, ButtonRole.Primary);
+        ConfigureButton(_seekBackFiveButton, "-5 sec", 66);
+        ConfigureButton(_seekBackOneButton, "-1 sec", 66);
         ConfigureButton(_playPauseButton, "Play", 66, ButtonRole.Primary);
         ConfigureButton(_stopButton, "Stop", 66, ButtonRole.Danger);
+        ConfigureButton(_seekForwardOneButton, "+1 sec", 70);
+        ConfigureButton(_seekForwardFiveButton, "+5 sec", 70);
         ConfigureButton(_playNextPlaylistButton, "Next Play", 88, ButtonRole.Primary);
         ConfigureButton(_cueNextPlaylistButton, "Next Cue", 84);
         controls.Controls.AddRange(
         [
             _cuePreviousPlaylistButton,
             _playPreviousPlaylistButton,
-            CreatePassiveButton("-5 sec", 66),
-            CreatePassiveButton("-1 sec", 66),
+            _seekBackFiveButton,
+            _seekBackOneButton,
             _playPauseButton,
             CreatePassiveButton("Pause", 72, ButtonRole.Warning),
             _stopButton,
-            CreatePassiveButton("+1 sec", 70),
-            CreatePassiveButton("+5 sec", 70),
+            _seekForwardOneButton,
+            _seekForwardFiveButton,
             _playNextPlaylistButton,
             _cueNextPlaylistButton,
         ]);
@@ -508,6 +516,10 @@ internal sealed class MainForm : Form
         _playPauseButton.Click += (_, _) => TogglePlayback();
         _stopButton.Click += (_, _) => StopPlayback();
         _clipStopButton.Click += (_, _) => StopPlayback();
+        _seekBackFiveButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(-5));
+        _seekBackOneButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(-1));
+        _seekForwardOneButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(1));
+        _seekForwardFiveButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(5));
         _waveform.SeekRequested += (_, progress) => SeekToProgress(progress);
 
         _positionTimer.Interval = 33;
@@ -572,6 +584,10 @@ internal sealed class MainForm : Form
         _toolTip.SetToolTip(_playPreviousPlaylistButton, "Play the previous playable playlist row.");
         _toolTip.SetToolTip(_playPauseButton, "Play, pause, or resume the loaded file.");
         _toolTip.SetToolTip(_stopButton, "Stop playback.");
+        _toolTip.SetToolTip(_seekBackFiveButton, "Seek backward 5 seconds.");
+        _toolTip.SetToolTip(_seekBackOneButton, "Seek backward 1 second.");
+        _toolTip.SetToolTip(_seekForwardOneButton, "Seek forward 1 second.");
+        _toolTip.SetToolTip(_seekForwardFiveButton, "Seek forward 5 seconds.");
         _toolTip.SetToolTip(_playNextPlaylistButton, "Play the next playable playlist row.");
         _toolTip.SetToolTip(_cueNextPlaylistButton, "Cue the next playable playlist row without playing.");
         _toolTip.SetToolTip(_audioDeviceBox, "Select the PC audio output device.");
@@ -1794,6 +1810,27 @@ internal sealed class MainForm : Form
         UpdateTransportState();
     }
 
+    private void SeekRelative(TimeSpan offset)
+    {
+        if (_reader is null)
+        {
+            return;
+        }
+
+        var target = _reader.CurrentTime + offset;
+        if (target < TimeSpan.Zero)
+        {
+            target = TimeSpan.Zero;
+        }
+        else if (target > _reader.TotalTime)
+        {
+            target = _reader.TotalTime;
+        }
+
+        _reader.CurrentTime = target;
+        RefreshPosition();
+    }
+
     private void SeekToProgress(double progress)
     {
         if (_reader is null)
@@ -1945,6 +1982,10 @@ internal sealed class MainForm : Form
         _stopButton.Enabled = hasFile;
         _clipStopButton.Enabled = hasFile;
         _clipPauseButton.Enabled = hasFile;
+        _seekBackFiveButton.Enabled = hasFile;
+        _seekBackOneButton.Enabled = hasFile;
+        _seekForwardOneButton.Enabled = hasFile;
+        _seekForwardFiveButton.Enabled = hasFile;
         _cueClipButton.Enabled = hasClip;
         _playClipButton.Enabled = hasClip;
         _addToPlaylistButton.Enabled = hasClip;
