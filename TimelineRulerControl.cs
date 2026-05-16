@@ -11,7 +11,7 @@ internal sealed class TimelineRulerControl : Control
         DoubleBuffered = true;
         BackColor = Color.FromArgb(12, 15, 18);
         ForeColor = Color.FromArgb(242, 247, 250);
-        Font = new Font("Consolas", 9.5f, FontStyle.Bold);
+        Font = new Font("Consolas", 9f, FontStyle.Bold);
         SetStyle(ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
     }
 
@@ -40,7 +40,7 @@ internal sealed class TimelineRulerControl : Control
         var g = e.Graphics;
         g.Clear(BackColor);
 
-        if (Width < 20 || Height < 12 || _duration.TotalSeconds <= 0)
+        if (Width < 20 || Height < 18 || _duration.TotalSeconds <= 0)
         {
             return;
         }
@@ -56,12 +56,12 @@ internal sealed class TimelineRulerControl : Control
         {
             var x = (float)(seconds / totalSeconds * (Width - 1));
             var major = Math.Abs(seconds % 60) < 0.001 || tickSeconds >= 60;
-            var tickHeight = major ? 12 : 7;
+            var tickHeight = major ? 11 : 6;
             g.DrawLine(major ? tickPen : minorTickPen, x, 0, x, tickHeight);
 
             if (major)
             {
-                g.DrawString(FormatRulerTime(TimeSpan.FromSeconds(seconds)), Font, textBrush, new RectangleF(x - 34, tickHeight + 1, 68, Height - tickHeight - 1), format);
+                g.DrawString(FormatRulerTime(TimeSpan.FromSeconds(seconds)), Font, textBrush, new RectangleF(x - 34, tickHeight + 3, 68, Height - tickHeight - 4), format);
             }
         }
     }

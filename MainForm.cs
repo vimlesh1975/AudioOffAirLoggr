@@ -363,7 +363,7 @@ internal sealed class MainForm : Form
             Margin = new Padding(0),
         };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 144));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
@@ -390,7 +390,7 @@ internal sealed class MainForm : Form
 
         var previewStack = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Color.Black, Margin = new Padding(0, 0, 0, 8) };
         previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
-        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
         root.Controls.Add(previewStack, 0, 1);
 
         var previewFrame = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, BackColor = Color.Black };
