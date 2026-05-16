@@ -529,7 +529,7 @@ internal sealed class MainForm : Form
         _seekForwardFiveButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(5));
         _waveform.SeekRequested += (_, progress) => SeekToProgress(progress);
 
-        _positionTimer.Interval = 33;
+        _positionTimer.Interval = 100;
         _positionTimer.Tick += (_, _) => RefreshPosition();
         _audioDeviceBox.SelectedIndexChanged += (_, _) => RestartOnSelectedAudioDevice();
         _volumeBar.ValueChanged += (_, _) =>
@@ -1878,10 +1878,10 @@ internal sealed class MainForm : Form
     {
         if (_reader is null)
         {
-            _timeLabel.Text = "00:00.000";
-            _largeTimeLabel.Text = "00:00.000";
-            _scrubStartLabel.Text = "00:00:00.00";
-            _scrubDurationLabel.Text = "00:00:00.00";
+            SetLabelText(_timeLabel, "00:00.000");
+            SetLabelText(_largeTimeLabel, "00:00.000");
+            SetLabelText(_scrubStartLabel, "00:00:00.00");
+            SetLabelText(_scrubDurationLabel, "00:00:00.00");
             _waveform.Progress = 0;
             UpdateAudioMeters(0, 0);
             return;
@@ -1895,10 +1895,10 @@ internal sealed class MainForm : Form
             remaining = TimeSpan.Zero;
         }
 
-        _timeLabel.Text = FormatTime(remaining);
-        _largeTimeLabel.Text = FormatTime(position);
-        _scrubStartLabel.Text = "00:00:00.00";
-        _scrubDurationLabel.Text = FormatPlaylistTime(duration);
+        SetLabelText(_timeLabel, FormatTime(remaining));
+        SetLabelText(_largeTimeLabel, FormatTime(position));
+        SetLabelText(_scrubStartLabel, "00:00:00.00");
+        SetLabelText(_scrubDurationLabel, FormatPlaylistTime(duration));
 
         if (!_seekingFromWaveform && duration.TotalSeconds > 0)
         {
@@ -2233,8 +2233,16 @@ internal sealed class MainForm : Form
 
     private void SetStatus(string text)
     {
-        _statusLabel.Text = text;
-        _headerStatusLabel.Text = text;
+        SetLabelText(_statusLabel, text);
+        SetLabelText(_headerStatusLabel, text);
+    }
+
+    private static void SetLabelText(Label label, string text)
+    {
+        if (!string.Equals(label.Text, text, StringComparison.Ordinal))
+        {
+            label.Text = text;
+        }
     }
 
     private static void ConfigureButton(Button button, string text, int width)
