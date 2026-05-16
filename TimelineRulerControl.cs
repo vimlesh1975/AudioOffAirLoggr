@@ -55,11 +55,11 @@ internal sealed class TimelineRulerControl : Control
             var x = (float)(seconds / totalSeconds * (Width - 1));
             var major = Math.Abs(seconds % 60) < 0.001 || tickSeconds >= 60;
             var tickHeight = major ? 10 : 6;
-            g.DrawLine(tickPen, x, Height - tickHeight, x, Height - 1);
+            g.DrawLine(tickPen, x, 0, x, tickHeight);
 
             if (major)
             {
-                g.DrawString(FormatRulerTime(TimeSpan.FromSeconds(seconds)), Font, textBrush, new RectangleF(x - 34, 0, 68, Height - tickHeight), format);
+                g.DrawString(FormatRulerTime(TimeSpan.FromSeconds(seconds)), Font, textBrush, new RectangleF(x - 34, tickHeight + 1, 68, Height - tickHeight - 1), format);
             }
         }
     }

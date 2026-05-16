@@ -362,7 +362,7 @@ internal sealed class MainForm : Form
             Margin = new Padding(0),
         };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
@@ -387,12 +387,17 @@ internal sealed class MainForm : Form
         _fileLabel.Text = "No file loaded";
         previewHeader.Controls.Add(_fileLabel, 1, 0);
 
+        var previewStack = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Color.Black };
+        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        previewStack.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        root.Controls.Add(previewStack, 0, 1);
+
         var previewFrame = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, BackColor = Color.Black };
         previewFrame.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
         previewFrame.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         previewFrame.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
         previewFrame.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 64));
-        root.Controls.Add(previewFrame, 0, 1);
+        previewStack.Controls.Add(previewFrame, 0, 0);
 
         ConfigureMeter(_leftMeter);
         ConfigureMeter(_rightMeter);
@@ -405,21 +410,20 @@ internal sealed class MainForm : Form
         _volumeBar.Margin = new Padding(8, 0, 0, 0);
         previewFrame.Controls.Add(_volumeBar, 3, 0);
 
+        _timelineRuler.Dock = DockStyle.Fill;
+        _timelineRuler.Margin = new Padding(42, 0, 106, 0);
+        previewStack.Controls.Add(_timelineRuler, 0, 1);
+
         _largeTimeLabel.Dock = DockStyle.Fill;
         _largeTimeLabel.TextAlign = ContentAlignment.MiddleCenter;
         _largeTimeLabel.Font = new Font(Font.FontFamily, 14f, FontStyle.Bold);
         _largeTimeLabel.Text = "00:00.000";
         root.Controls.Add(_largeTimeLabel, 0, 2);
 
-        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1, Padding = new Padding(0, 2, 0, 0) };
-        transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(0, 2, 0, 0) };
         transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         root.Controls.Add(transport, 0, 3);
-
-        _timelineRuler.Dock = DockStyle.Fill;
-        _timelineRuler.Margin = new Padding(110, 0, 110, 0);
-        transport.Controls.Add(_timelineRuler, 0, 0);
 
         var scrubRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3 };
         scrubRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
@@ -431,7 +435,7 @@ internal sealed class MainForm : Form
         var progressPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(83, 97, 108), Margin = new Padding(6, 13, 6, 13) };
         scrubRow.Controls.Add(progressPanel, 1, 0);
         scrubRow.Controls.Add(_scrubDurationLabel, 2, 0);
-        transport.Controls.Add(scrubRow, 0, 1);
+        transport.Controls.Add(scrubRow, 0, 0);
 
         var controls = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureButton(_cuePreviousPlaylistButton, "Prev Cue", 84);
@@ -459,7 +463,7 @@ internal sealed class MainForm : Form
             _playNextPlaylistButton,
             _cueNextPlaylistButton,
         ]);
-        transport.Controls.Add(controls, 0, 2);
+        transport.Controls.Add(controls, 0, 1);
 
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureComboBox(_audioDeviceBox);
