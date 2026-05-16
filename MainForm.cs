@@ -2009,7 +2009,7 @@ internal sealed class MainForm : Form
             var duration = ReadDurationText(item.Path);
             var rowIndex = _playlistGrid.Rows.Add(i + 1, FormatPlaylistTime(startTime), item.PlayEnabled, Path.GetFileName(item.Path), duration, false);
             _playlistGrid.Rows[rowIndex].Tag = item.Path;
-            ApplyPlaylistRowStyle(_playlistGrid.Rows[rowIndex], status);
+            ApplyPlaylistRowStyle(_playlistGrid.Rows[rowIndex], status, _darkModeSwitch.Checked);
 
             if (TryReadDuration(item.Path, out var itemDuration))
             {
@@ -2441,16 +2441,24 @@ internal sealed class MainForm : Form
         };
     }
 
-    private static void ApplyPlaylistRowStyle(DataGridViewRow row, string status)
+    private static void ApplyPlaylistRowStyle(DataGridViewRow row, string status, bool dark)
     {
-        row.DefaultCellStyle.BackColor = status switch
+        row.DefaultCellStyle.BackColor = (status, dark) switch
         {
-            "PLAYING" => Color.FromArgb(83, 55, 45),
-            "NEXT" => Color.FromArgb(78, 69, 38),
-            "MISSING" => Color.FromArgb(78, 41, 35),
-            "SKIPPED" => Color.FromArgb(45, 49, 53),
-            _ => row.Index % 2 == 0 ? Color.FromArgb(22, 26, 30) : Color.FromArgb(26, 30, 35),
+            ("PLAYING", true) => Color.FromArgb(83, 55, 45),
+            ("NEXT", true) => Color.FromArgb(78, 69, 38),
+            ("MISSING", true) => Color.FromArgb(78, 41, 35),
+            ("SKIPPED", true) => Color.FromArgb(45, 49, 53),
+            ("PLAYING", false) => Color.FromArgb(255, 224, 218),
+            ("NEXT", false) => Color.FromArgb(255, 242, 204),
+            ("MISSING", false) => Color.FromArgb(255, 224, 210),
+            ("SKIPPED", false) => Color.FromArgb(226, 230, 234),
+            _ => dark
+                ? row.Index % 2 == 0 ? Color.FromArgb(22, 26, 30) : Color.FromArgb(26, 30, 35)
+                : row.Index % 2 == 0 ? Color.White : Color.FromArgb(240, 244, 247),
         };
+        row.DefaultCellStyle.ForeColor = dark ? Color.FromArgb(231, 236, 239) : Color.FromArgb(25, 31, 36);
+        row.DefaultCellStyle.SelectionForeColor = Color.White;
     }
 
     private static bool HasSubdirectories(string path)
