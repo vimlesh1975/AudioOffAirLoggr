@@ -1923,7 +1923,7 @@ internal sealed class MainForm : Form
         }
 
         _positionTimer.Stop();
-        var endedNaturally = _reader.Position >= _reader.Length;
+        var endedNaturally = IsAtNaturalEnd();
         if (endedNaturally)
         {
             _reader.Position = 0;
@@ -1948,6 +1948,7 @@ internal sealed class MainForm : Form
         {
             if (_playlist[next].PlayEnabled && File.Exists(_playlist[next].Path))
             {
+                _playlistPlaybackActive = true;
                 _currentPlaylistIndex = next;
                 LoadFile(_playlist[next].Path, autoPlay: true);
                 RefreshPlaylistGrid(next);
@@ -1958,6 +1959,22 @@ internal sealed class MainForm : Form
         }
 
         return false;
+    }
+
+    private bool IsAtNaturalEnd()
+    {
+        if (_reader is null)
+        {
+            return false;
+        }
+
+        if (_reader.Position >= _reader.Length)
+        {
+            return true;
+        }
+
+        var remaining = _reader.TotalTime - _reader.CurrentTime;
+        return remaining <= TimeSpan.FromMilliseconds(250);
     }
 
     private void OutputOnPlaybackStopped(object? sender, StoppedEventArgs e)
