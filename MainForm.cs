@@ -107,6 +107,7 @@ internal sealed class MainForm : Form
         PopulateAudioDevices();
         _darkModeSwitch.Checked = _settings.DarkMode;
         _volumeBar.Value = Math.Clamp(_settings.Volume, 0f, 5f);
+        ApplyTheme(_darkModeSwitch.Checked);
         RestoreMediaRoot();
         RestorePlaylistOrSeed();
         _settingsReady = true;
@@ -557,12 +558,7 @@ internal sealed class MainForm : Form
         };
         _darkModeSwitch.CheckedChanged += (_, _) =>
         {
-            if (!_darkModeSwitch.Checked)
-            {
-                _darkModeSwitch.Checked = true;
-                return;
-            }
-
+            ApplyTheme(_darkModeSwitch.Checked);
             if (_settingsReady)
             {
                 SaveAppSettings();
@@ -2256,6 +2252,92 @@ internal sealed class MainForm : Form
         {
             label.Text = text;
         }
+    }
+
+    private void ApplyTheme(bool dark)
+    {
+        var back = dark ? Color.FromArgb(24, 27, 31) : Color.FromArgb(238, 241, 244);
+        var panel = dark ? Color.FromArgb(30, 35, 40) : Color.FromArgb(225, 230, 235);
+        var input = dark ? Color.FromArgb(18, 21, 24) : Color.White;
+        var text = dark ? Color.FromArgb(233, 238, 241) : Color.FromArgb(25, 31, 36);
+        var muted = dark ? Color.FromArgb(172, 183, 190) : Color.FromArgb(78, 88, 96);
+        var header = dark ? Color.FromArgb(34, 40, 46) : Color.FromArgb(210, 218, 225);
+
+        BackColor = back;
+        ForeColor = text;
+        ApplyThemeRecursive(this, dark, back, panel, input, text, muted, header);
+
+        _waveform.BackColor = input;
+        _waveform.ForeColor = dark ? Color.FromArgb(116, 215, 255) : Color.FromArgb(24, 101, 164);
+        _timelineRuler.BackColor = dark ? Color.FromArgb(12, 15, 18) : Color.FromArgb(214, 222, 229);
+        _timelineRuler.ForeColor = text;
+        _leftMeter.BackColor = input;
+        _rightMeter.BackColor = input;
+        _volumeBar.BackColor = input;
+
+        ApplyGridTheme(_clipGrid, dark);
+        ApplyGridTheme(_playlistGrid, dark);
+        _headerStatusLabel.ForeColor = dark ? Color.FromArgb(112, 231, 166) : Color.FromArgb(24, 128, 77);
+        _systemLabel.ForeColor = dark ? Color.FromArgb(137, 239, 194) : Color.FromArgb(24, 128, 77);
+        _fileLabel.ForeColor = muted;
+        _statusLabel.ForeColor = muted;
+        _clipCountLabel.ForeColor = dark ? Color.FromArgb(166, 214, 245) : Color.FromArgb(24, 101, 164);
+        RefreshPlaylistGrid(GetSelectedPlaylistIndex());
+    }
+
+    private static void ApplyThemeRecursive(Control root, bool dark, Color back, Color panel, Color input, Color text, Color muted, Color header)
+    {
+        foreach (Control control in root.Controls)
+        {
+            switch (control)
+            {
+                case Button:
+                    break;
+                case TextBox textBox:
+                    textBox.BackColor = input;
+                    textBox.ForeColor = text;
+                    break;
+                case ComboBox comboBox:
+                    comboBox.BackColor = input;
+                    comboBox.ForeColor = text;
+                    break;
+                case TreeView tree:
+                    tree.BackColor = input;
+                    tree.ForeColor = text;
+                    break;
+                case DataGridView:
+                    break;
+                case CheckBox checkBox:
+                    checkBox.ForeColor = text;
+                    checkBox.BackColor = panel;
+                    break;
+                case Label label:
+                    label.ForeColor = text;
+                    break;
+                case TableLayoutPanel or FlowLayoutPanel or Panel:
+                    control.BackColor = control.BackColor == Color.Black ? control.BackColor : panel;
+                    break;
+            }
+
+            if (control.Controls.Count > 0)
+            {
+                ApplyThemeRecursive(control, dark, back, panel, input, text, muted, header);
+            }
+        }
+    }
+
+    private static void ApplyGridTheme(DataGridView grid, bool dark)
+    {
+        grid.BackgroundColor = dark ? Color.FromArgb(18, 21, 24) : Color.White;
+        grid.GridColor = dark ? Color.FromArgb(48, 55, 62) : Color.FromArgb(190, 199, 207);
+        grid.ColumnHeadersDefaultCellStyle.BackColor = dark ? Color.FromArgb(35, 42, 49) : Color.FromArgb(210, 218, 225);
+        grid.ColumnHeadersDefaultCellStyle.ForeColor = dark ? Color.FromArgb(235, 241, 244) : Color.FromArgb(25, 31, 36);
+        grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = grid.ColumnHeadersDefaultCellStyle.BackColor;
+        grid.DefaultCellStyle.BackColor = dark ? Color.FromArgb(22, 26, 30) : Color.White;
+        grid.DefaultCellStyle.ForeColor = dark ? Color.FromArgb(231, 236, 239) : Color.FromArgb(25, 31, 36);
+        grid.DefaultCellStyle.SelectionBackColor = dark ? Color.FromArgb(58, 89, 118) : Color.FromArgb(58, 121, 184);
+        grid.DefaultCellStyle.SelectionForeColor = Color.White;
+        grid.AlternatingRowsDefaultCellStyle.BackColor = dark ? Color.FromArgb(26, 30, 35) : Color.FromArgb(240, 244, 247);
     }
 
     private static void ConfigureButton(Button button, string text, int width)
