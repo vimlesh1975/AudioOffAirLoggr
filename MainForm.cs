@@ -49,7 +49,8 @@ internal sealed class MainForm : Form
     private readonly Button _clearPlaylistButton = new();
     private readonly Button _openPlaylistButton = new();
     private readonly Button _savePlaylistButton = new();
-    private readonly Button _playPauseButton = new();
+    private readonly Button _mainPlayButton = new();
+    private readonly Button _mainPauseResumeButton = new();
     private readonly Button _stopButton = new();
     private readonly Label _appTitleLabel = new();
     private readonly Label _headerStatusLabel = new();
@@ -427,7 +428,8 @@ internal sealed class MainForm : Form
         ConfigureButton(_playPreviousPlaylistButton, "Prev Play", 88, ButtonRole.Primary);
         ConfigureButton(_seekBackFiveButton, "-5 sec", 66);
         ConfigureButton(_seekBackOneButton, "-1 sec", 66);
-        ConfigureButton(_playPauseButton, "Play", 66, ButtonRole.Primary);
+        ConfigureButton(_mainPlayButton, "Play", 66, ButtonRole.Primary);
+        ConfigureButton(_mainPauseResumeButton, "Pause", 78, ButtonRole.Warning);
         ConfigureButton(_stopButton, "Stop", 66, ButtonRole.Danger);
         ConfigureButton(_seekForwardOneButton, "+1 sec", 70);
         ConfigureButton(_seekForwardFiveButton, "+5 sec", 70);
@@ -439,8 +441,8 @@ internal sealed class MainForm : Form
             _playPreviousPlaylistButton,
             _seekBackFiveButton,
             _seekBackOneButton,
-            _playPauseButton,
-            CreatePassiveButton("Pause", 72, ButtonRole.Warning),
+            _mainPlayButton,
+            _mainPauseResumeButton,
             _stopButton,
             _seekForwardOneButton,
             _seekForwardFiveButton,
@@ -484,7 +486,7 @@ internal sealed class MainForm : Form
         _addToPlaylistButton.Click += (_, _) => AddSelectedClipToPlaylist();
         _cueClipButton.Click += (_, _) => CueSelectedClip();
         _playClipButton.Click += (_, _) => PlaySelectedClip();
-        _clipPauseButton.Click += (_, _) => TogglePlayback();
+        _clipPauseButton.Click += (_, _) => TogglePauseResume();
         _playPlaylistButton.Click += (_, _) => PlaySelectedPlaylistItem(manualList: false);
         _startPlaylistButton.Click += (_, _) => PlaySelectedPlaylistItem(manualList: true);
         _removePlaylistButton.Click += (_, _) => RemoveSelectedPlaylistItem();
@@ -513,7 +515,8 @@ internal sealed class MainForm : Form
         _playPreviousPlaylistButton.Click += (_, _) => PlayRelativePlaylistItem(-1);
         _playNextPlaylistButton.Click += (_, _) => PlayRelativePlaylistItem(1);
         _cueNextPlaylistButton.Click += (_, _) => CueRelativePlaylistItem(1);
-        _playPauseButton.Click += (_, _) => TogglePlayback();
+        _mainPlayButton.Click += (_, _) => PlayLoadedFromStart();
+        _mainPauseResumeButton.Click += (_, _) => TogglePauseResume();
         _stopButton.Click += (_, _) => StopPlayback();
         _clipStopButton.Click += (_, _) => StopPlayback();
         _seekBackFiveButton.Click += (_, _) => SeekRelative(TimeSpan.FromSeconds(-5));
@@ -582,7 +585,8 @@ internal sealed class MainForm : Form
 
         _toolTip.SetToolTip(_cuePreviousPlaylistButton, "Cue the previous playable playlist row without playing.");
         _toolTip.SetToolTip(_playPreviousPlaylistButton, "Play the previous playable playlist row.");
-        _toolTip.SetToolTip(_playPauseButton, "Play, pause, or resume the loaded file.");
+        _toolTip.SetToolTip(_mainPlayButton, "Play the loaded file from the start.");
+        _toolTip.SetToolTip(_mainPauseResumeButton, "Pause or resume playback.");
         _toolTip.SetToolTip(_stopButton, "Stop playback.");
         _toolTip.SetToolTip(_seekBackFiveButton, "Seek backward 5 seconds.");
         _toolTip.SetToolTip(_seekBackOneButton, "Seek backward 1 second.");
@@ -1763,11 +1767,26 @@ internal sealed class MainForm : Form
         _rightMeter.SetLevel(right);
     }
 
-    private void TogglePlayback()
+    private void PlayLoadedFromStart()
     {
         if (_reader is null || _output is null)
         {
             PlaySelectedClip();
+            return;
+        }
+
+        _reader.CurrentTime = TimeSpan.Zero;
+        _output.Play();
+        _positionTimer.Start();
+        SetStatus("Playing");
+        RefreshPosition();
+        UpdateTransportState();
+    }
+
+    private void TogglePauseResume()
+    {
+        if (_reader is null || _output is null)
+        {
             return;
         }
 
@@ -1977,10 +1996,13 @@ internal sealed class MainForm : Form
         var playlistIndex = GetSelectedPlaylistIndex();
         var hasPlaylistSelection = playlistIndex.HasValue && playlistIndex.Value >= 0 && playlistIndex.Value < _playlist.Count;
         var selectedPlaylistPlayable = hasPlaylistSelection && _playlist[playlistIndex!.Value].PlayEnabled;
-        _playPauseButton.Text = hasFile && _output?.PlaybackState == PlaybackState.Playing ? "Pause" : "Play";
+        _mainPlayButton.Text = "Play";
+        _mainPauseResumeButton.Text = hasFile && _output?.PlaybackState == PlaybackState.Playing ? "Pause" : "Resume";
         _clipPauseButton.Text = hasFile && _output?.PlaybackState == PlaybackState.Playing ? "Pause" : "Resume";
         _stopButton.Enabled = hasFile;
         _clipStopButton.Enabled = hasFile;
+        _mainPlayButton.Enabled = hasFile || hasClip;
+        _mainPauseResumeButton.Enabled = hasFile;
         _clipPauseButton.Enabled = hasFile;
         _seekBackFiveButton.Enabled = hasFile;
         _seekBackOneButton.Enabled = hasFile;
@@ -2184,7 +2206,7 @@ internal sealed class MainForm : Form
         {
             "-5 sec" => "Seek back 5 seconds. Not enabled for full-file audio playback yet.",
             "-1 sec" => "Seek back 1 second. Not enabled for full-file audio playback yet.",
-            "Pause" => "Pause playback. Use the active Play/Pause button.",
+            "Pause" => "Pause playback.",
             "+1 sec" => "Seek forward 1 second. Not enabled for full-file audio playback yet.",
             "+5 sec" => "Seek forward 5 seconds. Not enabled for full-file audio playback yet.",
             _ => text,
