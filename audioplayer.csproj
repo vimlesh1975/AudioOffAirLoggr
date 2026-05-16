@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>audioplayer</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath Condition="'$(Platform)' == 'x64'">bin\x64\$(Configuration)\AudioPlayer\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <BuildTimestamp>$([System.DateTime]::Now.ToString('ddMMyy_HHmmss'))</BuildTimestamp>
+    <TimestampedExeName>$(AssemblyName)_$(BuildTimestamp).exe</TimestampedExeName>
+  </PropertyGroup>
+
+  <Target Name="PrepareFreshTimestampedBuild" BeforeTargets="BeforeBuild">
+    <Exec IgnoreExitCode="true" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference = 'SilentlyContinue'; $processes = @(Get-Process -Name '$(AssemblyName)*'); if ($processes) { $processes | Stop-Process -Force; Start-Sleep -Milliseconds 500 }; $targetDirs = @('$(TargetDir)','$(MSBuildProjectDirectory)\bin\x64\$(Configuration)\AudioPlayer\','$(MSBuildProjectDirectory)\bin\x64\$(Configuration)\net10.0-windows\','$(MSBuildProjectDirectory)\bin\$(Configuration)\net10.0-windows\'); foreach ($targetDir in $targetDirs) { if (![string]::IsNullOrWhiteSpace($targetDir) -and (Test-Path -LiteralPath $targetDir)) { Get-ChildItem -LiteralPath $targetDir -Filter '$(AssemblyName)*.exe' -File | Remove-Item -Force } }&quot;" />
+    <Message Importance="high" Text="Closed running $(AssemblyName) builds and removed old player executables from $(TargetDir)" />
+  </Target>
+
+  <Target Name="CreateTimestampedExe" AfterTargets="Build" Condition="'$(OutputType)' == 'WinExe'">
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).exe" DestinationFiles="$(TargetDir)$(TimestampedExeName)" />
+    <Delete Files="$(TargetDir)$(AssemblyName).exe" />
+    <Message Importance="high" Text="Created timestamped executable: $(TargetDir)$(TimestampedExeName)" />
+  </Target>
+
+  <Target Name="StartTimestampedExe" AfterTargets="CreateTimestampedExe" Condition="'$(OutputType)' == 'WinExe' and '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$exe = '$(TargetDir)$(TimestampedExeName)'; if (Test-Path -LiteralPath $exe) { $quotedExe = [char]34 + $exe + [char]34; Start-Process -FilePath explorer.exe -ArgumentList $quotedExe; Write-Host ('Requested GUI launch through Explorer: ' + $exe) }&quot;" />
+    <Message Importance="high" Text="Started timestamped executable: $(TargetDir)$(TimestampedExeName)" />
+  </Target>
+
+</Project>
