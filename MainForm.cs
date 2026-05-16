@@ -59,6 +59,8 @@ internal sealed class MainForm : Form
     private readonly Label _fileLabel = new();
     private readonly Label _timeLabel = new();
     private readonly Label _largeTimeLabel = new();
+    private readonly Label _scrubStartLabel = new();
+    private readonly Label _scrubDurationLabel = new();
     private readonly Label _statusLabel = new();
     private readonly Label _clipCountLabel = new();
     private readonly ComboBox _audioDeviceBox = new();
@@ -417,10 +419,12 @@ internal sealed class MainForm : Form
         scrubRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
         scrubRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         scrubRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
-        scrubRow.Controls.Add(MakeTinyTimeLabel("00:00:00.00", ContentAlignment.MiddleCenter), 0, 0);
+        ConfigureTinyTimeLabel(_scrubStartLabel, "00:00:00.00", ContentAlignment.MiddleCenter);
+        ConfigureTinyTimeLabel(_scrubDurationLabel, "00:00:00.00", ContentAlignment.MiddleCenter);
+        scrubRow.Controls.Add(_scrubStartLabel, 0, 0);
         var progressPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(83, 97, 108), Margin = new Padding(6, 13, 6, 13) };
         scrubRow.Controls.Add(progressPanel, 1, 0);
-        scrubRow.Controls.Add(MakeTinyTimeLabel("Duration", ContentAlignment.MiddleCenter), 2, 0);
+        scrubRow.Controls.Add(_scrubDurationLabel, 2, 0);
         transport.Controls.Add(scrubRow, 0, 0);
 
         var controls = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
@@ -1876,6 +1880,8 @@ internal sealed class MainForm : Form
         {
             _timeLabel.Text = "00:00.000";
             _largeTimeLabel.Text = "00:00.000";
+            _scrubStartLabel.Text = "00:00:00.00";
+            _scrubDurationLabel.Text = "00:00:00.00";
             _waveform.Progress = 0;
             UpdateAudioMeters(0, 0);
             return;
@@ -1885,6 +1891,8 @@ internal sealed class MainForm : Form
         var position = _reader.CurrentTime;
         _timeLabel.Text = FormatTime(duration);
         _largeTimeLabel.Text = FormatTime(position);
+        _scrubStartLabel.Text = "00:00:00.00";
+        _scrubDurationLabel.Text = FormatPlaylistTime(duration);
 
         if (!_seekingFromWaveform && duration.TotalSeconds > 0)
         {
@@ -2114,14 +2122,18 @@ internal sealed class MainForm : Form
 
     private static Label MakeTinyTimeLabel(string text, ContentAlignment alignment)
     {
-        return new Label
-        {
-            Text = text,
-            Dock = DockStyle.Fill,
-            TextAlign = alignment,
-            ForeColor = Color.FromArgb(205, 215, 222),
-            Font = new Font("Consolas", 8.5f),
-        };
+        var label = new Label();
+        ConfigureTinyTimeLabel(label, text, alignment);
+        return label;
+    }
+
+    private static void ConfigureTinyTimeLabel(Label label, string text, ContentAlignment alignment)
+    {
+        label.Text = text;
+        label.Dock = DockStyle.Fill;
+        label.TextAlign = alignment;
+        label.ForeColor = Color.FromArgb(205, 215, 222);
+        label.Font = new Font("Consolas", 8.5f);
     }
 
     private string? PromptForText(string title, string label, string defaultValue)
