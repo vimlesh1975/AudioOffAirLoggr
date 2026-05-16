@@ -68,6 +68,7 @@ internal sealed class MainForm : Form
     private readonly AudioMeterBar _rightMeter = new();
     private readonly VerticalVolumeBar _volumeBar = new();
     private readonly WaveformControl _waveform = new();
+    private readonly TimelineRulerControl _timelineRuler = new();
     private readonly System.Windows.Forms.Timer _positionTimer = new();
     private readonly ToolTip _toolTip = new();
     private readonly ContextMenuStrip _clipContextMenu = new();
@@ -410,10 +411,15 @@ internal sealed class MainForm : Form
         _largeTimeLabel.Text = "00:00.000";
         root.Controls.Add(_largeTimeLabel, 0, 2);
 
-        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(0, 6, 0, 0) };
+        var transport = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1, Padding = new Padding(0, 2, 0, 0) };
+        transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
         transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         transport.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         root.Controls.Add(transport, 0, 3);
+
+        _timelineRuler.Dock = DockStyle.Fill;
+        _timelineRuler.Margin = new Padding(110, 0, 110, 0);
+        transport.Controls.Add(_timelineRuler, 0, 0);
 
         var scrubRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3 };
         scrubRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
@@ -425,7 +431,7 @@ internal sealed class MainForm : Form
         var progressPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(83, 97, 108), Margin = new Padding(6, 13, 6, 13) };
         scrubRow.Controls.Add(progressPanel, 1, 0);
         scrubRow.Controls.Add(_scrubDurationLabel, 2, 0);
-        transport.Controls.Add(scrubRow, 0, 0);
+        transport.Controls.Add(scrubRow, 0, 1);
 
         var controls = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureButton(_cuePreviousPlaylistButton, "Prev Cue", 84);
@@ -453,7 +459,7 @@ internal sealed class MainForm : Form
             _playNextPlaylistButton,
             _cueNextPlaylistButton,
         ]);
-        transport.Controls.Add(controls, 0, 1);
+        transport.Controls.Add(controls, 0, 2);
 
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureComboBox(_audioDeviceBox);
@@ -1882,6 +1888,7 @@ internal sealed class MainForm : Form
             SetLabelText(_largeTimeLabel, "00:00.000");
             SetLabelText(_scrubStartLabel, "00:00:00.00");
             SetLabelText(_scrubDurationLabel, "00:00:00.00");
+            _timelineRuler.Duration = TimeSpan.Zero;
             _waveform.Progress = 0;
             UpdateAudioMeters(0, 0);
             return;
@@ -1899,6 +1906,7 @@ internal sealed class MainForm : Form
         SetLabelText(_largeTimeLabel, FormatTime(position));
         SetLabelText(_scrubStartLabel, "00:00:00.00");
         SetLabelText(_scrubDurationLabel, FormatPlaylistTime(duration));
+        _timelineRuler.Duration = duration;
 
         if (!_seekingFromWaveform && duration.TotalSeconds > 0)
         {
