@@ -55,6 +55,7 @@ internal sealed class MainForm : Form
     private readonly Label _timeLabel = new();
     private readonly Label _largeTimeLabel = new();
     private readonly Label _statusLabel = new();
+    private readonly Label _clipCountLabel = new();
     private readonly ComboBox _audioDeviceBox = new();
     private readonly AudioMeterBar _leftMeter = new();
     private readonly AudioMeterBar _rightMeter = new();
@@ -213,13 +214,14 @@ internal sealed class MainForm : Form
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var top = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 7, Margin = new Padding(0, 0, 0, 8) };
+        var top = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 8, Margin = new Padding(0, 0, 0, 8) };
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 78));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86));
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86));
         panel.Controls.Add(top, 0, 0);
 
@@ -231,6 +233,10 @@ internal sealed class MainForm : Form
         ConfigureButton(_browseFolderButton, "Browse", 76, ButtonRole.Primary);
         ConfigureButton(_refreshButton, "Refresh", 82);
         ConfigureButton(_addToPlaylistButton, "Add", 76);
+        _clipCountLabel.Dock = DockStyle.Fill;
+        _clipCountLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _clipCountLabel.ForeColor = Color.FromArgb(166, 214, 245);
+        _clipCountLabel.Text = "0 clips";
         top.Controls.Add(MakeFieldLabel("Location"), 0, 0);
         top.Controls.Add(_mediaRootBox, 1, 0);
         top.Controls.Add(_browseFolderButton, 2, 0);
@@ -238,6 +244,7 @@ internal sealed class MainForm : Form
         top.Controls.Add(MakeFieldLabel("Search Media"), 4, 0);
         top.Controls.Add(_searchBox, 5, 0);
         top.Controls.Add(_clearSearchButton, 6, 0);
+        top.Controls.Add(_clipCountLabel, 7, 0);
 
         var browser = new TableLayoutPanel
         {
@@ -1078,7 +1085,9 @@ internal sealed class MainForm : Form
             _clipGrid.Rows[rowIndex].Cells["Name"].ToolTipText = file;
         }
 
-        SetStatus($"{_clipGrid.Rows.Count} clips");
+        var countText = $"{_clipGrid.Rows.Count} clips";
+        _clipCountLabel.Text = countText;
+        SetStatus(countText);
         UpdateTransportState();
     }
 
