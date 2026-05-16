@@ -37,6 +37,7 @@ internal sealed class MainForm : Form
     private readonly Button _playPreviousPlaylistButton = new();
     private readonly Button _playNextPlaylistButton = new();
     private readonly Button _cueNextPlaylistButton = new();
+    private readonly Button _stopPlaylistButton = new();
     private readonly Button _seekBackFiveButton = new();
     private readonly Button _seekBackOneButton = new();
     private readonly Button _seekForwardOneButton = new();
@@ -323,6 +324,7 @@ internal sealed class MainForm : Form
 
         var controls = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         ConfigureButton(_startPlaylistButton, "Start Playlist", 104, ButtonRole.Success);
+        ConfigureButton(_stopPlaylistButton, "Stop Playlist", 102, ButtonRole.Danger);
         ConfigureButton(_playPlaylistButton, "Play Row", 78, ButtonRole.Primary);
         ConfigureButton(_moveUpButton, "Up", 52);
         ConfigureButton(_moveDownButton, "Down", 64);
@@ -332,7 +334,7 @@ internal sealed class MainForm : Form
         ConfigureButton(_openPlaylistButton, "Open", 62);
         ConfigureButton(_savePlaylistButton, "Save", 62);
         controls.Controls.AddRange(
-            [_startPlaylistButton, _playPlaylistButton, _moveUpButton, _moveDownButton, _setPlaylistStartTimeButton, _removePlaylistButton, _clearPlaylistButton, _openPlaylistButton, _savePlaylistButton]);
+            [_startPlaylistButton, _stopPlaylistButton, _playPlaylistButton, _moveUpButton, _moveDownButton, _setPlaylistStartTimeButton, _removePlaylistButton, _clearPlaylistButton, _openPlaylistButton, _savePlaylistButton]);
         panel.Controls.Add(controls, 0, 1);
 
         StyleGrid(_playlistGrid);
@@ -510,6 +512,7 @@ internal sealed class MainForm : Form
         _clipPauseButton.Click += (_, _) => TogglePauseResume();
         _playPlaylistButton.Click += (_, _) => PlaySelectedPlaylistItem(manualList: false);
         _startPlaylistButton.Click += (_, _) => PlaySelectedPlaylistItem(manualList: true);
+        _stopPlaylistButton.Click += (_, _) => StopPlaylistMode();
         _removePlaylistButton.Click += (_, _) => RemoveSelectedPlaylistItem();
         _moveUpButton.Click += (_, _) => MoveSelectedPlaylistItem(-1);
         _moveDownButton.Click += (_, _) => MoveSelectedPlaylistItem(1);
@@ -590,6 +593,7 @@ internal sealed class MainForm : Form
         _toolTip.SetToolTip(_playNextClipButton, "Play the next clip in the clip grid.");
 
         _toolTip.SetToolTip(_startPlaylistButton, "Start playlist playback from the selected row.");
+        _toolTip.SetToolTip(_stopPlaylistButton, "Stop playlist mode and prevent automatic playlist advance.");
         _toolTip.SetToolTip(_playPlaylistButton, "Play the selected playlist row only.");
         _toolTip.SetToolTip(_moveUpButton, "Move the selected playlist row up.");
         _toolTip.SetToolTip(_moveDownButton, "Move the selected playlist row down.");
@@ -717,6 +721,7 @@ internal sealed class MainForm : Form
         _playlistContextMenu.Items.Clear();
         _playlistContextMenu.Items.Add(MakeMenuItem("Play", (_, _) => PlaySelectedPlaylistItem(manualList: false)));
         _playlistContextMenu.Items.Add(MakeMenuItem("Start Playlist From Row", (_, _) => PlaySelectedPlaylistItem(manualList: true)));
+        _playlistContextMenu.Items.Add(MakeMenuItem("Stop Playlist Mode", (_, _) => StopPlaylistMode()));
         _playlistContextMenu.Items.Add(new ToolStripSeparator());
         _playlistContextMenu.Items.Add(MakeMenuItem("Move Up", (_, _) => MoveSelectedPlaylistItem(-1)));
         _playlistContextMenu.Items.Add(MakeMenuItem("Move Down", (_, _) => MoveSelectedPlaylistItem(1)));
@@ -750,6 +755,14 @@ internal sealed class MainForm : Form
                 else if (item.Text == "Move Down")
                 {
                     item.Enabled = index.HasValue && index.Value < _playlist.Count - 1;
+                }
+                else if (item.Text == "Start Playlist From Row")
+                {
+                    item.Enabled = !_playlistPlaybackActive && hasSelection;
+                }
+                else if (item.Text == "Stop Playlist Mode")
+                {
+                    item.Enabled = _playlistPlaybackActive;
                 }
             }
         };
@@ -1286,8 +1299,11 @@ internal sealed class MainForm : Form
             return;
         }
 
-        _playlistPlaybackActive = false;
-        _currentPlaylistIndex = -1;
+        if (!_playlistPlaybackActive)
+        {
+            _currentPlaylistIndex = -1;
+        }
+
         LoadFile(path, autoPlay: false);
         RefreshPlaylistGrid();
         SetStatus("Clip cued");
@@ -1301,8 +1317,11 @@ internal sealed class MainForm : Form
             return;
         }
 
-        _playlistPlaybackActive = false;
-        _currentPlaylistIndex = -1;
+        if (!_playlistPlaybackActive)
+        {
+            _currentPlaylistIndex = -1;
+        }
+
         LoadFile(path, autoPlay: true);
         RefreshPlaylistGrid();
     }
@@ -1359,7 +1378,11 @@ internal sealed class MainForm : Form
             return;
         }
 
-        _playlistPlaybackActive = manualList;
+        if (manualList)
+        {
+            _playlistPlaybackActive = true;
+        }
+
         _currentPlaylistIndex = index.Value;
         LoadFile(_playlist[index.Value].Path, autoPlay: true);
         RefreshPlaylistGrid(index.Value);
@@ -1386,7 +1409,6 @@ internal sealed class MainForm : Form
             return;
         }
 
-        _playlistPlaybackActive = false;
         _currentPlaylistIndex = index.Value;
         LoadFile(_playlist[index.Value].Path, autoPlay: true);
         RefreshPlaylistGrid(index.Value);
@@ -1405,11 +1427,18 @@ internal sealed class MainForm : Form
             return;
         }
 
-        _playlistPlaybackActive = false;
         _currentPlaylistIndex = index;
         LoadFile(_playlist[index].Path, autoPlay: false);
         RefreshPlaylistGrid(index);
         SetStatus("Playlist row cued");
+    }
+
+    private void StopPlaylistMode()
+    {
+        _playlistPlaybackActive = false;
+        SetStatus("Playlist mode stopped");
+        RefreshPlaylistGrid(_currentPlaylistIndex >= 0 ? _currentPlaylistIndex : null);
+        UpdateTransportState();
     }
 
     private int? FindRelativePlaylistIndex(int direction)
@@ -1449,11 +1478,15 @@ internal sealed class MainForm : Form
         if (_currentPlaylistIndex == index.Value)
         {
             _currentPlaylistIndex = -1;
-            _playlistPlaybackActive = false;
         }
         else if (_currentPlaylistIndex > index.Value)
         {
             _currentPlaylistIndex--;
+        }
+
+        if (_playlist.Count == 0)
+        {
+            _playlistPlaybackActive = false;
         }
 
         RefreshPlaylistGrid(Math.Min(index.Value, _playlist.Count - 1));
@@ -1936,7 +1969,6 @@ internal sealed class MainForm : Form
 
     private void StopPlayback()
     {
-        _playlistPlaybackActive = false;
         if (_reader is null || _output is null)
         {
             return;
@@ -2043,8 +2075,7 @@ internal sealed class MainForm : Form
                 return;
             }
 
-            _playlistPlaybackActive = false;
-            SetStatus("Finished");
+            SetStatus(_playlistPlaybackActive ? "Playlist finished" : "Finished");
         }
 
         RefreshPosition();
@@ -2147,6 +2178,7 @@ internal sealed class MainForm : Form
         var playlistIndex = GetSelectedPlaylistIndex();
         var hasPlaylistSelection = playlistIndex.HasValue && playlistIndex.Value >= 0 && playlistIndex.Value < _playlist.Count;
         var selectedPlaylistPlayable = hasPlaylistSelection && _playlist[playlistIndex!.Value].PlayEnabled;
+        _startPlaylistButton.Text = _playlistPlaybackActive ? "Playlist ON" : "Start Playlist";
         _mainPlayButton.Text = "Play";
         _mainPauseResumeButton.Text = hasFile && _output?.PlaybackState == PlaybackState.Playing ? "Pause" : "Resume";
         _clipPauseButton.Text = hasFile && _output?.PlaybackState == PlaybackState.Playing ? "Pause" : "Resume";
@@ -2167,7 +2199,8 @@ internal sealed class MainForm : Form
         _cueNextClipButton.Enabled = clipIndex.HasValue && clipIndex.Value < _clipGrid.Rows.Count - 1;
         _playNextClipButton.Enabled = clipIndex.HasValue && clipIndex.Value < _clipGrid.Rows.Count - 1;
         _playPlaylistButton.Enabled = selectedPlaylistPlayable;
-        _startPlaylistButton.Enabled = selectedPlaylistPlayable;
+        _startPlaylistButton.Enabled = !_playlistPlaybackActive && selectedPlaylistPlayable;
+        _stopPlaylistButton.Enabled = _playlistPlaybackActive;
         _cuePreviousPlaylistButton.Enabled = FindRelativePlaylistIndex(-1).HasValue;
         _playPreviousPlaylistButton.Enabled = FindRelativePlaylistIndex(-1).HasValue;
         _cueNextPlaylistButton.Enabled = FindRelativePlaylistIndex(1).HasValue;
