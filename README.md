@@ -1,4 +1,6 @@
 # AudioPlayer
+<img width="1881" height="923" alt="image" src="https://github.com/user-attachments/assets/7f3eb976-1f1e-470c-b606-d246239500ee" />
+
 
 AudioPlayer is a small Windows desktop player inspired by the DecklinkPlayer workflow, but simplified for full audio-file playback through the default system audio device.
 
